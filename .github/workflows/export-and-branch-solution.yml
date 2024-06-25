@@ -39,61 +39,19 @@ jobs:
       RUNNER_DEBUG: 1
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout to Repository
+      uses: actions/checkout@v3
       with:
         lfs: true
+        
     - name: Who am I
       run: |
         whoami
-        
-    # - name: Set up Node.js
-    #   uses: actions/setup-node@v3
-    #   with:
-    #       node-version: '16'  # Node.js version 
- 
-    # - name: Install Power Platform CLI and check version
-    #   run: |
-    #     npm install -g powerapps-cli
-
-    # - name: Download PowerApps CLI (pac)
-    #   run: |
-    #     # Download the pac tool
-    #     Invoke-WebRequest -Uri https://aka.ms/PowerAppsCLI -OutFile pac.zip
-    #     Expand-Archive -Path pac.zip -DestinationPath pac
-    #     $env:PATH = "$(Get-Location)\pac;$env:PATH"
           
     - name: Check version of Power Platform CLI
-      run:  pac data
-     
+      run:  pac --version     
 
-    # - name: Install Power Platform CLI
-    #   run: |
-    #     Invoke-WebRequest -Uri "https://aka.ms/PowerAppsCLI" -OutFile "PowerAppsCLI.msi"
-    #     Start-Process msiexec.exe -ArgumentList "/i PowerAppsCLI.msi /quiet /norestart" -NoNewWindow -Wait
-    #     #Invoke-WebRequest -Uri "https://aka.ms/PowerAppsCLI" -OutFile "PowerAppsCLI.msi"
-    #     #Start-Process msiexec.exe -ArgumentList "/i PowerAppsCLI.msi /quiet /norestart" -NoNewWindow -Wait
-        
-    # - name: Verify Installation Directory and Update PATH
-    #   run: |
-    #       $pacCommand = Get-Command pac.cmd -ErrorAction SilentlyContinue
-    #       if ($pacCommand) {
-    #         Write-Host "pac.cmd found at: $($pacCommand.Source)"
-    #       } else {
-    #         Write-Host "pac.cmd not found in PATH. Searching manually..."
-    #         $pacPath = Get-ChildItem -Path "C:\" -Recurse -Filter "pac.cmd" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-    #         if ($pacPath) {
-    #           $pacDir = [System.IO.Path]::GetDirectoryName($pacPath)
-    #           Write-Host "pac.cmd found manually at: $pacPath"
-    #           [System.Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";$pacDir", [System.EnvironmentVariableTarget]::Machine)
-    #           Write-Host "PATH updated with: $pacDir"
-    #         } else {
-    #           Write-Error "pac.cmd not found"
-    #           exit 1
-    #         }
-    #       }
-     
-
-    - name: who-am-i action
+    - name: who-am-i PowerPlatform action
       uses: microsoft/powerplatform-actions/who-am-i@v0
       with:
         environment-url: ${{env.ENVIRONMENT_URL}}
@@ -101,8 +59,7 @@ jobs:
         client-secret: ${{ secrets.PowerPlatformSPN }}
         tenant-id: ${{env.TENANT_ID}}
 
-
-    - name: export-solution action
+    - name: Export-solution action
       uses: microsoft/powerplatform-actions/export-solution@v0
       with:
         environment-url: ${{env.ENVIRONMENT_URL}}
@@ -112,7 +69,7 @@ jobs:
         solution-name: ${{ github.event.inputs.solution_name }}
         solution-output-file: ${{ github.event.inputs.solution_exported_folder}}/${{ github.event.inputs.solution_name }}.zip
 
-    - name: unpack-solution action
+    - name: Unpack-solution action
       uses: microsoft/powerplatform-actions/unpack-solution@v0
       with:
         solution-file: ${{ github.event.inputs.solution_exported_folder}}/${{ github.event.inputs.solution_name }}.zip
@@ -120,7 +77,7 @@ jobs:
         solution-type: 'Unmanaged'
         overwrite-files: true
 
-    - name: branch-solution, prepare it for a PullRequest
+    - name: Branch-solution, Prepare it for a PullRequest
       uses: microsoft/powerplatform-actions/branch-solution@v0
       with:
         solution-folder: ${{ github.event.inputs.solution_folder}}/${{ github.event.inputs.solution_name }}
