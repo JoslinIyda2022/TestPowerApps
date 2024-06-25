@@ -34,7 +34,7 @@ jobs:
   export-from-dev:
   
     #runs-on: windows-latest          
-    runs-on: [self-hosted, Windows, X64, SSSBG4NBL513]    # or you can say runs-on: ubuntu-latest
+    runs-on: [self-hosted, Windows, X64, SSSBG4NBL513]    
     env:
       RUNNER_DEBUG: 1
 
