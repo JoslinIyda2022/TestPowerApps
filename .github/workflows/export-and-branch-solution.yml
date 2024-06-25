@@ -1,0 +1,131 @@
+name: export-solution-branch
+# Export solution from DEV environment
+#  unpack it and prepare, commit and push a git branch with the changes
+
+on:
+  workflow_dispatch:
+    inputs:
+      # Change this value
+      solution_name:
+        description: 'name of the solution to worked on from Power Platform'
+        required: true
+        default: 'Common Data Services Default Solution'
+       #Do Not change these values
+      solution_exported_folder:
+        description: 'folder name for staging the exported solution *do not change*'
+        required: true
+        default: out/exported/
+      solution_folder:
+        description: 'staging the unpacked solution folder before check-in *do not change*'
+        required: true
+        default: out/solutions/
+      solution_target_folder: 
+       description: 'folder name to be created and checked in *do not change*'
+       required: true
+       default: solutions/
+env:
+#edit your values here
+  ENVIRONMENT_URL: 'https://orgd97d8c13.crm8.dynamics.com'
+  CLIENT_ID: ${{ secrets.POWERPLATFORMSPN }}
+  TENANT_ID: '7571a489-bd29-4f38-b9a6-7c880f8cddf0'
+permissions:
+  contents: write
+jobs:
+  export-from-dev:
+  
+    #runs-on: windows-latest          
+    runs-on: [self-hosted, Windows, X64, SSSBG4NBL513]    # or you can say runs-on: ubuntu-latest
+    env:
+      RUNNER_DEBUG: 1
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        lfs: true
+    - name: Who am I
+      run: |
+        whoami
+        
+    # - name: Set up Node.js
+    #   uses: actions/setup-node@v3
+    #   with:
+    #       node-version: '16'  # Node.js version 
+ 
+    # - name: Install Power Platform CLI and check version
+    #   run: |
+    #     npm install -g powerapps-cli
+
+    # - name: Download PowerApps CLI (pac)
+    #   run: |
+    #     # Download the pac tool
+    #     Invoke-WebRequest -Uri https://aka.ms/PowerAppsCLI -OutFile pac.zip
+    #     Expand-Archive -Path pac.zip -DestinationPath pac
+    #     $env:PATH = "$(Get-Location)\pac;$env:PATH"
+	#  echo $env:PATH >> $env:GITHUB_PATH
+
+          
+    - name: Check version of Power Platform CLI
+      run:  pac --version
+     
+
+    # - name: Install Power Platform CLI
+    #   run: |
+    #     Invoke-WebRequest -Uri "https://aka.ms/PowerAppsCLI" -OutFile "PowerAppsCLI.msi"
+    #     Start-Process msiexec.exe -ArgumentList "/i PowerAppsCLI.msi /quiet /norestart" -NoNewWindow -Wait
+    #     #Invoke-WebRequest -Uri "https://aka.ms/PowerAppsCLI" -OutFile "PowerAppsCLI.msi"
+    #     #Start-Process msiexec.exe -ArgumentList "/i PowerAppsCLI.msi /quiet /norestart" -NoNewWindow -Wait
+        
+    # - name: Verify Installation Directory and Update PATH
+    #   run: |
+    #       $pacCommand = Get-Command pac.cmd -ErrorAction SilentlyContinue
+    #       if ($pacCommand) {
+    #         Write-Host "pac.cmd found at: $($pacCommand.Source)"
+    #       } else {
+    #         Write-Host "pac.cmd not found in PATH. Searching manually..."
+    #         $pacPath = Get-ChildItem -Path "C:\" -Recurse -Filter "pac.cmd" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+    #         if ($pacPath) {
+    #           $pacDir = [System.IO.Path]::GetDirectoryName($pacPath)
+    #           Write-Host "pac.cmd found manually at: $pacPath"
+    #           [System.Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";$pacDir", [System.EnvironmentVariableTarget]::Machine)
+    #           Write-Host "PATH updated with: $pacDir"
+    #         } else {
+    #           Write-Error "pac.cmd not found"
+    #           exit 1
+    #         }
+    #       }
+     
+
+    - name: who-am-i action
+      uses: microsoft/powerplatform-actions/who-am-i@v0
+      with:
+        environment-url: ${{env.ENVIRONMENT_URL}}
+        app-id: ${{env.CLIENT_ID}}
+        client-secret: ${{ secrets.PowerPlatformSPN }}
+        tenant-id: ${{env.TENANT_ID}}
+
+
+    - name: export-solution action
+      uses: microsoft/powerplatform-actions/export-solution@v0
+      with:
+        environment-url: ${{env.ENVIRONMENT_URL}}
+        app-id: ${{env.CLIENT_ID}}
+        client-secret: ${{ secrets.PowerPlatformSPN }}
+        tenant-id: ${{env.TENANT_ID}}
+        solution-name: ${{ github.event.inputs.solution_name }}
+        solution-output-file: ${{ github.event.inputs.solution_exported_folder}}/${{ github.event.inputs.solution_name }}.zip
+
+    - name: unpack-solution action
+      uses: microsoft/powerplatform-actions/unpack-solution@v0
+      with:
+        solution-file: ${{ github.event.inputs.solution_exported_folder}}/${{ github.event.inputs.solution_name }}.zip
+        solution-folder: ${{ github.event.inputs.solution_folder}}/${{ github.event.inputs.solution_name }}
+        solution-type: 'Unmanaged'
+        overwrite-files: true
+
+    - name: branch-solution, prepare it for a PullRequest
+      uses: microsoft/powerplatform-actions/branch-solution@v0
+      with:
+        solution-folder: ${{ github.event.inputs.solution_folder}}/${{ github.event.inputs.solution_name }}
+        solution-target-folder: ${{ github.event.inputs.solution_target_folder}}/${{ github.event.inputs.solution_name }}
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        allow-empty-commit: true
